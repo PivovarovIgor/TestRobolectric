@@ -3,6 +3,7 @@ package com.geekbrains.tests.presenter.search
 import com.geekbrains.tests.model.SearchResponse
 import com.geekbrains.tests.repository.GitHubRepository
 import com.geekbrains.tests.repository.GitHubRepository.GitHubRepositoryCallback
+import com.geekbrains.tests.view.ViewContract
 import com.geekbrains.tests.view.search.ViewSearchContract
 import retrofit2.Response
 
@@ -15,36 +16,52 @@ import retrofit2.Response
  */
 
 internal class SearchPresenter internal constructor(
-    private val viewContract: ViewSearchContract,
+    private var viewContract: ViewSearchContract?,
     private val repository: GitHubRepository
 ) : PresenterSearchContract, GitHubRepositoryCallback {
 
     override fun searchGitHub(searchQuery: String) {
-        viewContract.displayLoading(true)
-        repository.searchGithub(searchQuery, this)
+        viewContract?.let {
+            it.displayLoading(true)
+            repository.searchGithub(searchQuery, this)
+        }
+    }
+
+    override fun onAttach(fragmentActivity: ViewSearchContract) {
+        viewContract = fragmentActivity
+    }
+
+    override fun onDetach(fragmentActivity: ViewSearchContract) {
+        if (fragmentActivity == viewContract) {
+            viewContract = null
+        }
     }
 
     override fun handleGitHubResponse(response: Response<SearchResponse?>?) {
-        viewContract.displayLoading(false)
-        if (response != null && response.isSuccessful) {
-            val searchResponse = response.body()
-            val searchResults = searchResponse?.searchResults
-            val totalCount = searchResponse?.totalCount
-            if (searchResults != null && totalCount != null) {
-                viewContract.displaySearchResults(
-                    searchResults,
-                    totalCount
-                )
+        viewContract?.let {
+            it.displayLoading(false)
+            if (response != null && response.isSuccessful) {
+                val searchResponse = response.body()
+                val searchResults = searchResponse?.searchResults
+                val totalCount = searchResponse?.totalCount
+                if (searchResults != null && totalCount != null) {
+                    it.displaySearchResults(
+                        searchResults,
+                        totalCount
+                    )
+                } else {
+                    it.displayError("Search results or total count are null")
+                }
             } else {
-                viewContract.displayError("Search results or total count are null")
+                it.displayError("Response is null or unsuccessful")
             }
-        } else {
-            viewContract.displayError("Response is null or unsuccessful")
         }
     }
 
     override fun handleGitHubError() {
-        viewContract.displayLoading(false)
-        viewContract.displayError()
+        viewContract?.let{
+            it.displayLoading(false)
+            it.displayError()
+        }
     }
 }
