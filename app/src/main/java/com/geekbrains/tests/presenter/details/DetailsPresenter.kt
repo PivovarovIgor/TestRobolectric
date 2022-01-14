@@ -9,6 +9,7 @@ internal class DetailsPresenter internal constructor(
 
     override fun setCounter(count: Int) {
         this.count = count
+        viewContract?.setCount(count)
     }
 
     override fun onIncrement() {
