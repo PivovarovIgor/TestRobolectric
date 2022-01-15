@@ -20,7 +20,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 class MainActivity : AppCompatActivity(), ViewSearchContract {
 
     private val adapter = SearchResultAdapter()
-    private val presenter: PresenterSearchContract = SearchPresenter(this, createRepository())
+    var presenter: PresenterSearchContract = SearchPresenter(this, createRepository())
     private var totalCount: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +64,16 @@ class MainActivity : AppCompatActivity(), ViewSearchContract {
 
     private fun createRepository(): GitHubRepository {
         return GitHubRepository(createRetrofit().create(GitHubApi::class.java))
+    }
+
+    override fun onStart() {
+        super.onStart()
+        presenter.onAttach(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        presenter.onDetach(this)
     }
 
     private fun createRetrofit(): Retrofit {

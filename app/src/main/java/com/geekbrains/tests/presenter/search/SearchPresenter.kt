@@ -20,6 +20,8 @@ internal class SearchPresenter internal constructor(
     private val repository: GitHubRepository
 ) : PresenterSearchContract, GitHubRepositoryCallback {
 
+    private var handleGitHubResponseCommand: List<Response<SearchResponse?>?>? = null
+
     override fun searchGitHub(searchQuery: String) {
         viewContract?.let {
             it.displayLoading(true)
@@ -29,6 +31,11 @@ internal class SearchPresenter internal constructor(
 
     override fun onAttach(fragmentActivity: ViewSearchContract) {
         viewContract = fragmentActivity
+        handleGitHubResponseCommand?.let {
+            if (it.isNotEmpty()) {
+                applyToViewResponse(it.first() )
+            }
+        }
     }
 
     override fun onDetach(fragmentActivity: ViewSearchContract) {
@@ -38,7 +45,12 @@ internal class SearchPresenter internal constructor(
     }
 
     override fun handleGitHubResponse(response: Response<SearchResponse?>?) {
+        applyToViewResponse(response)
+    }
+
+    private fun applyToViewResponse(response: Response<SearchResponse?>?) {
         viewContract?.let {
+            handleGitHubResponseCommand = null
             it.displayLoading(false)
             if (response != null && response.isSuccessful) {
                 val searchResponse = response.body()
@@ -55,6 +67,8 @@ internal class SearchPresenter internal constructor(
             } else {
                 it.displayError("Response is null or unsuccessful")
             }
+        } ?: let {
+            handleGitHubResponseCommand = listOf(response)
         }
     }
 
